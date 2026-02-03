@@ -45,6 +45,18 @@ finpy summary
 finpy list
 ```
 
+### Get Monthly Reports
+```bash
+finpy mon_report <month> <year>
+```
+Use `--plot` flag at the end for visualizing using a pie chart grouped by categories.
+
+### Get Yearly Reports
+```bash
+finpy yr_report <year>
+```
+Use `--cat` flag for grouping by category and `--monthly` flag for grouping by month. As usual `--plot` flag for visualization.
+
 ## Data Storage
 All data is stored locally in SQLite database file: `finpy.db`. Deleting this file will remove all the stored data.
 
@@ -53,12 +65,11 @@ All data is stored locally in SQLite database file: `finpy.db`. Deleting this fi
 - argparse (CLI)
 - SQLite (DB)
 - rich (Terminal UI)
+- termcharts
 
 ## Project Status
 This is an early-stage hobby project. More features will be added over time. Planned features:
-- Monthly reports
 - Budget tracking
 - Data backup
-- Graphs and visualizations
 
 I am open to all kinds of suggestions!
