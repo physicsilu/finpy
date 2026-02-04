@@ -8,6 +8,8 @@ A personal finance CLI tool built in Python for tracking your income and expense
 - List all transactions
 - Local storage using SQLite
 - Terminal output using `rich`
+- Monthly and Yearly reports
+- Reports for a given date range
 
 ## Installation
 
@@ -56,6 +58,12 @@ Use `--plot` flag at the end for visualizing using a pie chart grouped by catego
 finpy yr_report <year>
 ```
 Use `--cat` flag for grouping by category and `--monthly` flag for grouping by month. As usual `--plot` flag for visualization.
+
+### Get Reports for a Date Range
+```bash
+finpy report --from <start_date> --to <end_date>
+```
+Use `--cat` flag for grouping by category and `--plot` for visualization.
 
 ## Data Storage
 All data is stored locally in SQLite database file: `finpy.db`. Deleting this file will remove all the stored data.

@@ -323,3 +323,94 @@ def yearly_report(args):
 
 
     conn.close()
+
+def report(args):
+    """
+    Generate expense report for a date range
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    try:
+
+        # -----------------------
+        # Parse Dates
+        # -----------------------
+        try:
+            start = datetime.strptime(args.start, "%Y-%m-%d").date()
+            end = datetime.strptime(args.end, "%Y-%m-%d").date()
+        except ValueError:
+            console.print(
+                " Invalid date format. Use YYYY-MM-DD",
+                style="bold red"
+            )
+            return
+
+        if start > end:
+            console.print(
+                " Start date must be before end date",
+                style="bold red"
+            )
+            return
+
+        console.print(
+            f"\n Expense Report: {start} → {end}\n",
+            style="bold cyan"
+        )
+
+        # -----------------------
+        # TOTAL
+        # -----------------------
+        cur.execute(
+            """
+            SELECT SUM(amount)
+            FROM transactions
+            WHERE type='expense'
+            AND date BETWEEN ? AND ?
+            """,
+            (start.isoformat(), end.isoformat())
+        )
+
+        res = cur.fetchone()
+        total = res[0] if res and res[0] else 0
+
+        console.print(
+            f" Total Expense: ₹{total:.2f}\n",
+            style="bold green"
+        )
+
+        # -----------------------
+        # CATEGORY BREAKDOWN
+        # -----------------------
+        if args.cat:
+
+            cur.execute(
+                """
+                SELECT category, SUM(amount)
+                FROM transactions
+                WHERE type='expense'
+                AND date BETWEEN ? AND ?
+                GROUP BY category
+                ORDER BY SUM(amount) DESC
+                """,
+                (start.isoformat(), end.isoformat())
+            )
+
+            rows = cur.fetchall()
+
+            if rows:
+
+                render_table(
+                    title="Category-wise Breakdown",
+                    headers=["Category", "Amount"],
+                    rows=rows,
+                    plot=args.plot,
+                    chart_title=f"Expenses ({start} → {end})"
+                )
+
+            else:
+                console.print(" No category data found.")
+
+    finally:
+        conn.close()

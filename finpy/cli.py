@@ -1,5 +1,5 @@
 import argparse
-from finpy.db import init_db, add_entry, get_summary, list_entries, monthly_report, yearly_report
+from finpy.db import init_db, add_entry, get_summary, list_entries, monthly_report, yearly_report, report
 
 def main():
     init_db()
@@ -115,6 +115,40 @@ def main():
     )
 
     yr_report.set_defaults(func=yearly_report)
+
+    # Report
+    range_report = subparsers.add_parser(
+        "report",
+        help="Generate expense report for a date range"
+    )
+
+    range_report.add_argument(
+        "--from",
+        dest="start",
+        required=True,
+        help="Start date (YYYY-MM-DD)"
+    )
+
+    range_report.add_argument(
+        "--to",
+        dest="end",
+        required=True,
+        help="End date (YYYY-MM-DD)"
+    )
+
+    range_report.add_argument(
+        "--cat",
+        action="store_true",
+        help="Show category-wise breakdown"
+    )
+
+    range_report.add_argument(
+        "--plot",
+        action="store_true",
+        help="Show expense chart"
+    )
+
+    range_report.set_defaults(func=report)
 
     # Parse
     args = parser.parse_args()
