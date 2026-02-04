@@ -8,6 +8,7 @@ A personal finance CLI tool built in Python for tracking your income and expense
 - List all transactions
 - Local storage using SQLite
 - Terminal output using `rich`
+- Delete/Update particular transactions
 - Monthly and Yearly reports
 - Reports for a given date range
 
@@ -40,6 +41,18 @@ finpy summary
 ### List All Transactions
 ```bash
 finpy list
+```
+
+### Delete a Particular Transaction
+```bash
+finpy delete <transaction_id>
+```
+
+### Update a Particular Transaction
+```bash
+finpy update <transaction_id> --amount <new_amount> # for updating amount
+                              --category <new_category> # for updating category
+                              --note <new_note> # for updating note  
 ```
 
 ### Get Monthly Reports

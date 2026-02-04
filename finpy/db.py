@@ -109,7 +109,7 @@ def list_entries(_):
 
     cur.execute(
         """
-        SELECT date, type, amount, category, note
+        SELECT id, date, type, amount, category, note
         FROM transactions
         """
     )
@@ -118,7 +118,7 @@ def list_entries(_):
 
     table = Table(title="Financial Entries")
 
-    cols = ["Date", "Type", "Amount", "Category", "Note"]
+    cols = ["ID","Date", "Type", "Amount", "Category", "Note"]
     for col in cols:
         table.add_column(col)
 
@@ -380,6 +380,28 @@ def report(args):
             style="bold green"
         )
 
+        # Transactions list
+        cur.execute(
+            """
+            SELECT id, date, type, amount, category, note
+            FROM transactions
+            WHERE date BETWEEN ? AND ?
+            """,
+            (start.isoformat(), end.isoformat())
+        )
+
+        rows = cur.fetchall()
+        table = Table(title="Financial Entries")
+
+        cols = ["ID","Date", "Type", "Amount", "Category", "Note"]
+        for col in cols:
+            table.add_column(col)
+
+        for row in rows:
+            table.add_row(*[str(item) for item in row])
+        
+        console.print(table)
+
         # -----------------------
         # CATEGORY BREAKDOWN
         # -----------------------
@@ -411,6 +433,114 @@ def report(args):
 
             else:
                 console.print(" No category data found.")
+
+    finally:
+        conn.close()
+
+def delete_transaction(args):
+    """
+    Delete a transaction by ID
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    tx_id = args.id
+
+    try:
+        cur.execute(
+            """
+            SELECT * FROM transactions WHERE id=?
+            """, (tx_id,)
+        )
+
+        row = cur.fetchone()
+        if not row:
+            console.print(f"Transaction ID {tx_id} not found.", style="bold red")
+            return
+        
+        console.print("Transaction to delete:", style="bold yellow")
+        console.print(row)
+        
+        confirm = input("Confirm deletion (y/n): ")
+        if confirm.lower() != 'y':
+            console.print("Deletion cancelled.", style="bold red")
+            return
+
+        cur.execute(
+            """
+            DELETE FROM transactions WHERE id=?
+            """, (tx_id,)
+        )
+
+        conn.commit()
+        console.print(f"Transaction ID {tx_id} deleted.", style="bold green")
+
+    finally:
+        conn.close()
+
+def update_transaction(args):
+    """
+    Update a transaction by ID
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    tx_id = args.id
+
+    try:
+        cur.execute(
+            "SELECT * FROM transactions WHERE id=?",
+            (tx_id,)
+        )
+
+        row = cur.fetchone()
+
+        if not row:
+            console.print(
+                f"Transaction ID {tx_id} not found.", 
+                style="bold red"
+            )
+
+            return
+        
+        if args.amount is not None:
+            cur.execute(
+                """
+                UPDATE transactions
+                SET amount = ?
+                WHERE id = ?
+                """, (args.amount, tx_id)
+            )
+
+            console.print(f"Updated the amount to {args.amount}", style="bold green")
+        
+        if args.category is not None:
+            cur.execute(
+                """
+                UPDATE transactions
+                SET category = ?
+                WHERE id = ?
+                """, (args.category, tx_id)
+            )
+
+            console.print(f"Updated the category to {args.category}", style="bold green") 
+
+        if args.note is not None:
+            cur.execute(
+                """
+                UPDATE transactions
+                SET note = ?
+                WHERE id = ?
+                """, (" ".join(args.note), tx_id)
+            )
+
+            note_text = " ".join(args.note)
+
+            console.print(f"Updated the note to {note_text}", style="bold green")
+
+        conn.commit()
 
     finally:
         conn.close()

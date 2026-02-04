@@ -1,5 +1,5 @@
 import argparse
-from finpy.db import init_db, add_entry, get_summary, list_entries, monthly_report, yearly_report, report
+from finpy.db import init_db, add_entry, get_summary, list_entries, monthly_report, yearly_report, report, delete_transaction, update_transaction
 
 def main():
     init_db()
@@ -149,6 +149,55 @@ def main():
     )
 
     range_report.set_defaults(func=report)
+
+    # Delete
+    delete = subparsers.add_parser(
+        "delete",
+        help="Delete a transaction by ID"
+    )
+
+    delete.add_argument(
+        "id",
+        type=int,
+        help="Transaction ID to delete"
+    )
+
+    delete.set_defaults(func=delete_transaction)
+
+    # Update
+    update = subparsers.add_parser(
+        "update",
+        help="Update a transaction by ID"
+    )
+
+    update.add_argument(
+        "id",
+        type=int,
+        help="Transaction ID to update"
+    )
+
+    update.add_argument(
+        "--amount",
+        dest="amount",
+        type=float,
+        help="Updated amount"
+    )
+
+    update.add_argument(
+        "--category",
+        dest="category",
+        type=str,
+        help="Updated category"
+    )
+
+    update.add_argument(
+        "--note",
+        dest="note",
+        nargs="*",
+        help="Updated note"
+    )
+
+    update.set_defaults(func=update_transaction)
 
     # Parse
     args = parser.parse_args()
