@@ -27,14 +27,9 @@ pip install -e .
 
 ## Usage
 
-### Add Income
+### Add Income/Expense
 ```bash
-finpy add income 9000 salary main
-```
-
-### Add Expense
-```bash
-finpy add expense 200 food masala dosa
+finpy add <income/expense> <amount> <category> <note>
 ```
 
 ### Show Summary
