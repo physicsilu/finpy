@@ -85,6 +85,7 @@ All data is stored locally in SQLite database file: `finpy.db`. Deleting this fi
 
 ## Project Status
 This is an early-stage hobby project. More features will be added over time. Planned features:
+- Making a TUI
 - Budget tracking
 - Data backup
 

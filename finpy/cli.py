@@ -1,5 +1,70 @@
 import argparse
-from finpy.db import init_db, add_entry, get_summary, list_entries, monthly_report, yearly_report, report, delete_transaction, update_transaction
+from finpy.db import (
+    init_db, 
+    add_entry, 
+    get_summary_data, 
+    get_all_transactions, 
+    monthly_report, 
+    yearly_report, 
+    report, 
+    delete_transaction, 
+    update_transaction
+    )
+
+from rich.table import Table
+from rich.console import Console
+
+console = Console()
+
+def summary_cmd(args):
+    """
+    Shows financial summary (CLI layer)
+    """
+
+    data = get_summary_data()
+
+    table = Table(title="Financial Summary")
+
+    table.add_column("Metric")
+    table.add_column("Amount", justify="right")
+
+    table.add_row("Total Income", f"₹{data['income']:.2f}")
+    table.add_row("Total Expense", f"₹{data['expense']:.2f}")
+    table.add_row("Savings", f"₹{data['savings']:.2f}")
+
+    console.print(table)
+
+def list_cmd(args):
+    """
+    Lists all transactions (CLI layer)
+    """
+
+    entries = get_all_transactions()
+
+    if not entries:
+        console.print("No transactions found.", style="yellow")
+        return
+
+    table = Table(title="All Transactions")
+
+    table.add_column("ID", justify="right")
+    table.add_column("Date")
+    table.add_column("Type")
+    table.add_column("Amount", justify="right")
+    table.add_column("Category")
+    table.add_column("Note")
+
+    for entry in entries:
+        table.add_row(
+            str(entry[0]),
+            entry[1],
+            entry[2],
+            f"₹{entry[3]:.2f}",
+            entry[4],
+            entry[5] or ""
+        )
+
+    console.print(table)
 
 def main():
     init_db()
@@ -48,7 +113,7 @@ def main():
         help="Show financial summary"
     )
 
-    summary.set_defaults(func=get_summary)
+    summary.set_defaults(func=summary_cmd)
 
     # List
     lst = subparsers.add_parser(
@@ -56,7 +121,7 @@ def main():
         help="List all transactions"
     )
 
-    lst.set_defaults(func=list_entries)
+    lst.set_defaults(func=list_cmd)
 
     # Monthly Report
     mon_report = subparsers.add_parser(

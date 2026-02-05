@@ -57,77 +57,6 @@ def add_entry(args):
 
     console.print("Added!", style= "green")
 
-def get_summary(_):
-    """
-    Get a summary of financial data.
-    """
-    conn = connect_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        SELECT SUM(amount) 
-        FROM transactions
-        WHERE type='income'
-        """
-    )
-
-    income = cur.fetchone()[0] or 0
-
-    cur.execute(
-        """
-        SELECT SUM(amount) 
-        FROM transactions
-        WHERE type='expense'
-        """
-    )
-
-    expense = cur.fetchone()[0] or 0
-
-    savings = income - expense
-
-    table = Table(title="Financial Summary")
-
-    table.add_column("Metric")
-    table.add_column("Amount")
-
-    table.add_row("Total Income", f"{income:.2f}")
-    table.add_row("Total Expense", f"{expense:.2f}")
-    table.add_row("Savings", f"{savings:.2f}")
-
-    console.print(table)
-
-    conn.close()
-
-def list_entries(_):
-    """
-    List all financial entries.
-    """
-
-    conn = connect_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        SELECT id, date, type, amount, category, note
-        FROM transactions
-        """
-    )
-
-    rows = cur.fetchall()
-
-    table = Table(title="Financial Entries")
-
-    cols = ["ID","Date", "Type", "Amount", "Category", "Note"]
-    for col in cols:
-        table.add_column(col)
-
-    for row in rows:
-        table.add_row(*[str(item) for item in row])
-    
-    console.print(table)
-    conn.close()
-
 def fetch_expenses(cur, year=None, month=None, group_by=None):
     """
     Fetch aggregated expense data.
@@ -544,3 +473,76 @@ def update_transaction(args):
 
     finally:
         conn.close()
+
+
+def get_summary_data():
+    """
+    Return total income, expense and savings.
+
+    input: None
+    output: {
+        "income": float,
+        "expense": float,
+        "savings": float
+    }
+    output type: dict
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    # Total income
+    cur.execute(
+        """
+        SELECT SUM(amount)
+        FROM transactions
+        WHERE type='income'
+        """
+    )
+
+    income = cur.fetchone()[0] or 0
+
+    # Total Expense
+    cur.execute(
+        """
+        SELECT SUM(amount)
+        FROM transactions
+        WHERE type='expense'
+        """
+    )
+
+    expense = cur.fetchone()[0] or 0
+
+    conn.close()
+
+    savings = income - expense
+
+    return{
+        "income": income,
+        "expense": expense,
+        "savings": savings
+    }
+
+def get_all_transactions():
+    """
+    Fetch all transactions from the database.
+
+    Returns:
+        List of tuples: Each tuple contains (id, date, type, amount, category, note)
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT id, date, type, amount, category, note
+        FROM transactions
+        ORDER BY date DESC
+        """
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
