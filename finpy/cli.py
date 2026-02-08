@@ -4,12 +4,13 @@ from finpy.db import (
     add_entry, 
     get_summary_data, 
     get_all_transactions, 
-    monthly_report, 
+    get_monthly_report_data, 
     yearly_report, 
     report, 
     delete_transaction, 
     update_transaction
     )
+import termcharts
 
 from rich.table import Table
 from rich.console import Console
@@ -65,6 +66,44 @@ def list_cmd(args):
         )
 
     console.print(table)
+
+def montly_cmd(args):
+    """
+    Generates monthly report (CLI layer)
+    """
+
+    data = get_monthly_report_data(args.month, args.year)
+    total_expense = data["total"]
+    rows = data['by_category']
+
+    if not rows:
+        console.print("No transactions found for this month.", style="yellow")
+        return
+    
+    console.print(f"Total Expense: ₹{total_expense:.2f}", style="green")
+
+    table = Table(title=f"Monthly Report - {args.month}/{args.year}")
+
+    table.add_column("Category")
+    table.add_column("Amount", justify="right")
+
+    table_data = {}
+
+    for cat, amt in rows:
+        table.add_row(cat, f"₹{amt:.2f}")
+        table_data[cat] = amt
+
+    console.print(table)
+
+    if args.plot and table_data:
+        chart = termcharts.doughnut(
+            data=table_data,
+            title=f"Expense Distribution - {args.month}/{args.year}",
+            rich=True
+        )
+
+        console.print(chart)
+
 
 def main():
     init_db()
@@ -147,7 +186,7 @@ def main():
         help="True or False for graph"
     )
 
-    mon_report.set_defaults(func=monthly_report)
+    mon_report.set_defaults(func=montly_cmd)
 
     # Yearly Report
     yr_report = subparsers.add_parser(

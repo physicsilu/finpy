@@ -546,3 +546,55 @@ def get_all_transactions():
     conn.close()
 
     return rows
+
+def get_monthly_report_data(month, year):
+    """
+    Fetch total expense and category-wise breakdown for a given month and year.
+
+    Returns:
+        {
+            "total": float,
+            "by_category": List of tuples (category, amount)
+        }
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    # Total Expense
+    cur.execute(
+        """
+        SELECT SUM(amount)
+        FROM transactions
+        WHERE type='expense'
+        AND strftime('%Y', date)=?
+        AND strftime('%m', date)=?
+        """,
+        (str(year), f"{month:02d}")
+    )
+
+    total = cur.fetchone()[0] or 0
+
+    # Category-wise Breakdown
+    cur.execute(
+        """
+        SELECT category, SUM(amount)
+        FROM transactions
+        WHERE type='expense'
+        AND strftime('%Y', date)=?
+        AND strftime('%m', date)=?
+        GROUP BY category
+        ORDER BY SUM(amount) DESC
+        """,
+        (str(year), f"{month:02d}")
+    )
+
+    by_category = cur.fetchall()
+
+    conn.close()
+
+    return {
+        "total": total,
+        "by_category": by_category
+    }
+
