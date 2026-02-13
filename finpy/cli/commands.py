@@ -1,6 +1,4 @@
-import argparse
 from finpy.db import (
-    init_db, 
     add_transaction, 
     get_summary_data, 
     get_all_transactions, 
@@ -10,12 +8,13 @@ from finpy.db import (
     get_transaction_by_id,
     delete_transaction_by_id,
     update_transaction_by_id,
+    get_recent_transactions
 )
 
 from rich.table import Table
 from rich.console import Console
 
-from .utils import render_chart
+from finpy.utils import render_chart
 
 console = Console()
 
@@ -226,6 +225,9 @@ def report_cmd(args):
             )
 
 def delete_cmd(args):
+    """
+    Deletes a transaction by ID (CLI layer)
+    """
 
     tx_id = args.id
 
@@ -256,6 +258,9 @@ def delete_cmd(args):
         )
 
 def update_cmd(args):
+    """
+    Updates a transaction by ID (CLI layer)
+    """
 
     tx_id = args.id
 
@@ -299,212 +304,38 @@ def add_cmd(args):
     if success:
         console.print("Transaction added successfully.", style="bold green")
 
+def recent_cmd(args):
+    """
+    Shows recent transactions (CLI layer)
+    """
 
-def main():
-    init_db()
+    n = args.n
 
-    parser = argparse.ArgumentParser(
-        prog="finpy",
-        description="Personal Finance CLI Tool"
-    )
-
-    subparsers = parser.add_subparsers(dest="command")
-
-    # Add
-    add = subparsers.add_parser(
-            "add",
-            help="Add income/expense" 
-        )
+    if n <= 0:
+        console.print("Please provide a positive number for recent transactions.", style="bold red")
+        return
     
-    add.add_argument(
-        "type",
-        choices=["income", "expense"],
-        help="Transaction type"
-    )
+    transactions = get_recent_transactions(n)
 
-    add.add_argument(
-        "amount",
-        type=float,
-        help="Amount in rupees"
-    )
+    if not transactions:
+        console.print("No transactions found.", style="yellow")
+        return
+    
+    table = Table(title=f"Recent {n} Transactions")
+    table.add_column("ID", justify="right")
+    table.add_column("Date")
+    table.add_column("Type")
+    table.add_column("Amount", justify="right")
+    table.add_column("Category")
+    table.add_column("Note")
+    for entry in transactions:
+        table.add_row(
+            str(entry[0]),
+            entry[1],
+            entry[2],
+            f"₹{entry[3]:.2f}",
+            entry[4],
+            entry[5] or ""
+        )
+    console.print(table)
 
-    add.add_argument(
-        "category",
-        help="Category (food, rent, etc)"
-    )
-
-    add.add_argument(
-        "note",
-        nargs="*",
-        help="Short note"
-    )
-
-    add.set_defaults(func=add_cmd)
-
-    # Summary
-    summary = subparsers.add_parser(
-        "summary",
-        help="Show financial summary"
-    )
-
-    summary.set_defaults(func=summary_cmd)
-
-    # List
-    lst = subparsers.add_parser(
-        "list",
-        help="List all transactions"
-    )
-
-    lst.set_defaults(func=list_cmd)
-
-    # Monthly Report
-    mon_report = subparsers.add_parser(
-        "mon_report",
-        help="Generate monthly report"
-    )
-
-    mon_report.add_argument(
-        "month",
-        type=int,
-        help="Month (1-12)"
-    )
-
-    mon_report.add_argument(
-        "year",
-        type=int,
-        help="Year (e.g., 2024)"
-    )
-
-    mon_report.add_argument(
-        "--plot",
-        action="store_true",
-        help="True or False for graph"
-    )
-
-    mon_report.set_defaults(func=montly_cmd)
-
-    # Yearly Report
-    yr_report = subparsers.add_parser(
-        "yr_report",
-        help="Generate yearly report"
-    )
-
-    yr_report.add_argument(
-        "year",
-        type=int,
-        help="Year (e.g., 2024)"
-    )
-
-    yr_report.add_argument(
-        "--cat",
-        action="store_true",
-        help="Show category-wise summary"
-    )
-
-    yr_report.add_argument(
-        "--monthly",
-        action="store_true",
-        help="Show month-wise breakdown"
-    )
-
-    yr_report.add_argument(
-        "--plot",
-        action="store_true",
-        help="Show graphs"
-    )
-
-    yr_report.set_defaults(func=yearly_cmd)
-
-    # Report
-    range_report = subparsers.add_parser(
-        "report",
-        help="Generate expense report for a date range"
-    )
-
-    range_report.add_argument(
-        "--from",
-        dest="start",
-        required=True,
-        help="Start date (YYYY-MM-DD)"
-    )
-
-    range_report.add_argument(
-        "--to",
-        dest="end",
-        required=True,
-        help="End date (YYYY-MM-DD)"
-    )
-
-    range_report.add_argument(
-        "--cat",
-        action="store_true",
-        help="Show category-wise breakdown"
-    )
-
-    range_report.add_argument(
-        "--plot",
-        action="store_true",
-        help="Show expense chart"
-    )
-
-    range_report.set_defaults(func=report_cmd)
-
-    # Delete
-    delete = subparsers.add_parser(
-        "delete",
-        help="Delete a transaction by ID"
-    )
-
-    delete.add_argument(
-        "id",
-        type=int,
-        help="Transaction ID to delete"
-    )
-
-    delete.set_defaults(func=delete_cmd)
-
-    # Update
-    update = subparsers.add_parser(
-        "update",
-        help="Update a transaction by ID"
-    )
-
-    update.add_argument(
-        "id",
-        type=int,
-        help="Transaction ID to update"
-    )
-
-    update.add_argument(
-        "--amount",
-        dest="amount",
-        type=float,
-        help="Updated amount"
-    )
-
-    update.add_argument(
-        "--category",
-        dest="category",
-        type=str,
-        help="Updated category"
-    )
-
-    update.add_argument(
-        "--note",
-        dest="note",
-        nargs="*",
-        help="Updated note"
-    )
-
-    update.set_defaults(func=update_cmd)
-
-    # Parse
-    args = parser.parse_args()
-
-    if hasattr(args, "func"):
-        args.func(args)
-    else:
-        parser.print_help()
-
-if __name__ == "__main__":
-    main()

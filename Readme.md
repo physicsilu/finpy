@@ -6,6 +6,7 @@ A personal finance CLI tool built in Python for tracking your income and expense
 - Add income and expense entries
 - View financial summary
 - List all transactions
+- List recent `n` transactions
 - Local storage using SQLite
 - Terminal output using `rich`
 - Delete/Update particular transactions
@@ -72,6 +73,12 @@ Use `--cat` flag for grouping by category and `--monthly` flag for grouping by m
 finpy report --from <start_date> --to <end_date>
 ```
 Use `--cat` flag for grouping by category and `--plot` for visualization.
+
+### Get Recent `n` Transactions
+```bash
+finpy recent --n <number_of_transactions>
+```
+The default value is *5* transactions. 
 
 ## Data Storage
 All data is stored locally in SQLite database file: `finpy.db`. Deleting this file will remove all the stored data.

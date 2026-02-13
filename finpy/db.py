@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 from rich.console import Console
-from . utils import fetch_expenses
+from finpy.utils import fetch_expenses
 
 DB = "finpy.db"
 console = Console()
@@ -398,3 +398,28 @@ def add_transaction(tx_type, amount, category, note):
     conn.close()
 
     return True
+
+def get_recent_transactions(limit=5):
+    """
+    Fetch recent transactions.
+
+    Returns:
+        List: Each tuple contains (id, date, type, amount, category, note)
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT id, date, type, amount, category, note
+        FROM transactions
+        ORDER BY date DESC, id DESC
+        LIMIT ?
+        """, (limit,)
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
