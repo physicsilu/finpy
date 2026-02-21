@@ -4,7 +4,7 @@ from finpy.cli.commands import (
     summary_cmd,
     list_cmd,
     add_cmd,
-    montly_cmd,
+    monthly_cmd,
     yearly_cmd,
     report_cmd,
     delete_cmd,
@@ -29,24 +29,28 @@ def main():
         )
     
     add.add_argument(
-        "type",
-        choices=["income", "expense"],
+        "--type",
+        dest="type",
+        choices=["income", "expense", "investment"],
         help="Transaction type"
     )
 
     add.add_argument(
-        "amount",
+        "--amount",
+        dest="amount",
         type=float,
         help="Amount in rupees"
     )
 
     add.add_argument(
-        "category",
+        "--category",
+        dest="category",
         help="Category (food, rent, etc)"
     )
 
     add.add_argument(
-        "note",
+        "--note",
+        dest="note",
         nargs="*",
         help="Short note"
     )
@@ -56,7 +60,27 @@ def main():
     # Summary
     summary = subparsers.add_parser(
         "summary",
-        help="Show financial summary"
+        help="""
+            Show financial summary (income, expense, savings, rates, etc.) 
+            I = Total Income, E = Total Expense (consumption only), V = Total Investments 
+            Savings = I - E 
+            Net Cash Flow = I - E - V 
+            Expense Rate = (E / I) * 100 
+            Investment Rate = (V / I) * 100 
+            Savings Rate = (Savings / I) * 100 
+            """
+    )
+
+    summary.add_argument(
+        "--from",
+        dest="start",
+        help="Start date (YYYY-MM-DD)"
+    )
+
+    summary.add_argument(
+        "--to",
+        dest="end",
+        help="End date (YYYY-MM-DD)"
     )
 
     summary.set_defaults(func=summary_cmd)
@@ -71,18 +95,22 @@ def main():
 
     # Monthly Report
     mon_report = subparsers.add_parser(
-        "mon_report",
+        "monthly",
         help="Generate monthly report"
     )
 
     mon_report.add_argument(
-        "month",
+        "--month",
+        dest="month",
+        required=True,
         type=int,
         help="Month (1-12)"
     )
 
     mon_report.add_argument(
-        "year",
+        "--year",
+        dest="year",
+        required=True,
         type=int,
         help="Year (e.g., 2024)"
     )
@@ -93,16 +121,18 @@ def main():
         help="True or False for graph"
     )
 
-    mon_report.set_defaults(func=montly_cmd)
+    mon_report.set_defaults(func=monthly_cmd)
 
     # Yearly Report
     yr_report = subparsers.add_parser(
-        "yr_report",
+        "yearly",
         help="Generate yearly report"
     )
 
     yr_report.add_argument(
-        "year",
+        "--year",
+        dest="year",
+        required=True,
         type=int,
         help="Year (e.g., 2024)"
     )

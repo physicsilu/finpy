@@ -35,15 +35,14 @@ def init_db():
     conn.commit()
     conn.close()
 
-def get_summary_data():
+def get_summary_between(start_date=None, end_date=None):
     """
-    Return total income, expense and savings.
-
-    input: None
+    Return total income, expense and investment for a date range.
+    input: start_date (str, optional), end_date (str, optional) in YYYY-MM-DD format
     output: {
         "income": float,
         "expense": float,
-        "savings": float
+        "investment": float
     }
     output type: dict
     """
@@ -51,37 +50,48 @@ def get_summary_data():
     conn = connect_db()
     cur = conn.cursor()
 
-    # Total income
-    cur.execute(
-        """
-        SELECT SUM(amount)
+    query = """
+        SELECT
+            SUM(CASE WHEN type='income' THEN amount ELSE 0 END),
+            SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),
+            SUM(CASE WHEN type='investment' THEN amount ELSE 0 END)
         FROM transactions
-        WHERE type='income'
-        """
-    )
+    """
 
-    income = cur.fetchone()[0] or 0
+    params = []
 
-    # Total Expense
-    cur.execute(
-        """
-        SELECT SUM(amount)
-        FROM transactions
-        WHERE type='expense'
-        """
-    )
+    if start_date and end_date:
+        query += " WHERE date BETWEEN ? AND ?"
+        params.extend([start_date, end_date])
 
-    expense = cur.fetchone()[0] or 0
-
+    cur.execute(query, params)
+    income, expense, investment = cur.fetchone()
     conn.close()
 
-    savings = income - expense
+    income = income or 0
+    expense = expense or 0
+    investment = investment or 0
 
-    return{
+    return {
         "income": income,
         "expense": expense,
-        "savings": savings
+        "investment": investment
     }
+
+def get_summary_data():
+    """
+    Return total income, expense and investment.
+
+    input: None
+    output: {
+        "income": float,
+        "expense": float,
+        "investment": float
+    }
+    output type: dict
+    """
+
+    return get_summary_between()
 
 def get_all_transactions():
     """
@@ -423,3 +433,34 @@ def get_recent_transactions(limit=5):
     conn.close()
 
     return rows
+
+def get_mon_summary_data(month, year):
+    """
+    Fetch total income, expense and investment for a given month and year.
+
+    Returns:
+        {
+            "income": float,
+            "expense": float,
+            "investment": float
+        }
+    """
+
+    start_date = f"{year}-{month:02d}-01"
+    end_date = f"{year}-{month:02d}-31"
+    return get_summary_between(start_date, end_date)
+
+def get_yr_summary_data(year):
+    """
+    Fetch total income, expense and investment for a given year.
+
+    Returns:
+        {
+            "income": float,
+            "expense": float,
+            "investment": float
+        }
+    """
+    start_date = f"{year}-01-01"
+    end_date = f"{year}-12-31"
+    return get_summary_between(start_date, end_date)

@@ -3,7 +3,7 @@
 A personal finance CLI tool built in Python for tracking your income and expenses directly from the terminal.
 
 ## Features
-- Add income and expense entries
+- Add income, expense and investment entries
 - View financial summary
 - List all transactions
 - List recent `n` transactions
@@ -29,14 +29,19 @@ pip install -e .
 
 ## Usage
 
-### Add Income/Expense
+### Add Income/Expense/Investment
 ```bash
-finpy add <income/expense> <amount> <category> <note>
+finpy add --type <income/expense/investment> 
+          --amount <amount> 
+          --category <category> 
+          --note <note...>
 ```
 
 ### Show Summary
 ```bash
-finpy summary
+finpy summary # for overall financial summary
+
+finpy summary --from <start_date> --to <end_date> # for financial summary over a period
 ```
 
 ### List All Transactions
@@ -58,13 +63,14 @@ finpy update <transaction_id> --amount <new_amount> # for updating amount
 
 ### Get Monthly Reports
 ```bash
-finpy mon_report <month> <year>
+finpy monthly --month <month>
+                 --year  <year>
 ```
 Use `--plot` flag at the end for visualizing using a pie chart grouped by categories.
 
 ### Get Yearly Reports
 ```bash
-finpy yr_report <year>
+finpy yearly --year <year>
 ```
 Use `--cat` flag for grouping by category and `--monthly` flag for grouping by month. As usual `--plot` flag for visualization.
 

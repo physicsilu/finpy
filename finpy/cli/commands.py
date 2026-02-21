@@ -1,6 +1,7 @@
 from finpy.db import (
     add_transaction, 
     get_summary_data, 
+    get_summary_between,
     get_all_transactions, 
     get_monthly_report_data, 
     get_yearly_report_data, 
@@ -18,21 +19,50 @@ from finpy.utils import render_chart
 
 console = Console()
 
-def summary_cmd(_):
+def summary_cmd(args):
     """
     Shows financial summary (CLI layer)
     """
 
-    data = get_summary_data()
+    if args.start and args.end:
+        data = get_summary_between(args.start, args.end)
+    elif not args.start and not args.end:
+        data = get_summary_data()
+    else:
+        console.print("Both --from and --to arguments are required.", style="bold red")
+        return
+
+    income = data["income"]
+    expense = data["expense"]
+    investment = data["investment"]
+
+    # Core metrics
+    savings = income - expense
+    net_cash_flow = income - expense - investment
+
+    # Rates
+    if income > 0:
+        expense_rate = (expense / income) * 100
+        investment_rate = (investment / income) * 100
+        savings_rate = (savings / income) * 100
+    else:
+        expense_rate = 0
+        investment_rate = 0
+        savings_rate = 0
 
     table = Table(title="Financial Summary")
 
     table.add_column("Metric")
     table.add_column("Amount", justify="right")
 
-    table.add_row("Total Income", f"₹{data['income']:.2f}")
-    table.add_row("Total Expense", f"₹{data['expense']:.2f}")
-    table.add_row("Savings", f"₹{data['savings']:.2f}")
+    table.add_row("Total Income", f"₹{income:.2f}")
+    table.add_row("Total Expense", f"₹{expense:.2f}")
+    table.add_row("Investment", f"₹{investment:.2f}")
+    table.add_row("Savings", f"₹{savings:.2f}")
+    table.add_row("Net Cash Flow", f"₹{net_cash_flow:.2f}")
+    table.add_row("Expense Rate", f"{expense_rate:.2f}%")
+    table.add_row("Investment Rate", f"{investment_rate:.2f}%")
+    table.add_row("Savings Rate", f"{savings_rate:.2f}%")
 
     console.print(table)
 
@@ -68,7 +98,7 @@ def list_cmd(_):
 
     console.print(table)
 
-def montly_cmd(args):
+def monthly_cmd(args):
     """
     Generates monthly report (CLI layer)
     """
