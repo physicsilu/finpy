@@ -32,6 +32,19 @@ def init_db():
         """
     )
 
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS budgets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL CHECK(amount > 0),
+        month INTEGER NOT NULL CHECK(month BETWEEN 1 AND 12),
+        year INTEGER NOT NULL,
+        UNIQUE(category, month, year)
+        );
+        """
+    )
+
     conn.commit()
     conn.close()
 
@@ -464,3 +477,94 @@ def get_yr_summary_data(year):
     start_date = f"{year}-01-01"
     end_date = f"{year}-12-31"
     return get_summary_between(start_date, end_date)
+
+def add_budget(category, amount, month, year):
+    """
+    Add or update a budget for a specific category and month.
+
+    Returns:
+        bool: True if added/updated successfully
+    """
+
+    conn = connect_db()
+    cur = conn.cursor()
+
+    try:
+        # Check if budget already exists for the category and month
+        cur.execute(
+            """
+            SELECT id FROM budgets
+            WHERE category=? AND month=? AND year=?
+            """, (category, month, year)
+        )
+
+        row = cur.fetchone()
+
+        if row:
+            # Update existing budget
+            cur.execute(
+                """
+                UPDATE budgets
+                SET amount=?
+                WHERE id=?
+                """, (amount, row[0])
+            )
+        else:
+            # Insert new budget
+            cur.execute(
+                """
+                INSERT INTO budgets (category, amount, month, year)
+                VALUES (?, ?, ?, ?)
+                """, (category, amount, month, year)
+            )
+
+        conn.commit()
+        return True
+
+    finally:
+        conn.close()
+
+def get_budget(month, year):
+    """
+    Fetch budget for a specific month and year.
+
+    Returns:
+        List: Each tuple contains (category, amount)
+    """
+    conn = connect_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT category, amount FROM budgets
+        WHERE month=? AND year=?
+        """, (month, year)
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
+
+def get_expense_aggregation_by_category(month, year):
+    """
+    Fetch total expense for each category in a given month and year.
+
+    Returns:
+        List: Each tuple contains (category, amount)
+    """
+    conn = connect_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT category, SUM(amount) FROM transactions
+        WHERE type='expense' AND strftime('%m', date)=? AND strftime('%Y', date)=?
+        GROUP BY category
+        """, (f"{month:02d}", str(year))
+    )
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows

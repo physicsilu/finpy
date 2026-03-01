@@ -9,7 +9,9 @@ from finpy.cli.commands import (
     report_cmd,
     delete_cmd,
     update_cmd,
-    recent_cmd
+    recent_cmd,
+    budget_set_cmd,
+    budget_status_cmd
 )
 
 def main():
@@ -256,7 +258,75 @@ def main():
 
     recent_parser.set_defaults(func=recent_cmd)
 
+    # Budget Set
+    budget_parser = subparsers.add_parser(
+        "budget",
+        help="Budget management"
+    )
 
+    budget_sub = budget_parser.add_subparsers(dest="budget_cmd", required=True)
+
+    budget_set = budget_sub.add_parser(
+        "set",
+        help="Set monthly budget"
+    )
+
+    budget_set.add_argument(
+        "--amount",
+        dest="amount",
+        type=float,
+        required=True,
+        help="Budget amount in rupees"
+    )
+
+    budget_set.add_argument(
+        "--month",
+        dest="month",
+        type=int,
+        required=True,
+        help="Month (1-12)"
+    )
+
+    budget_set.add_argument(
+        "--year",
+        dest="year",
+        type=int,
+        required=True,
+        help="Year (e.g., 2024)"
+    )
+
+    budget_set.add_argument(
+        "--category",
+        dest="category",
+        required=True,
+        help="Category for budget (e.g., food, rent)"
+    )
+
+    budget_set.set_defaults(func=budget_set_cmd)
+
+    # Budget Status
+    budget_status = budget_sub.add_parser(
+        "status",
+        help="Show budget status for a month"
+    )
+
+    budget_status.add_argument(
+        "--month",
+        dest="month",
+        type=int,
+        required=True,
+        help="Month (1-12)"
+    )
+
+    budget_status.add_argument(
+        "--year",
+        dest="year",
+        type=int,
+        required=True,
+        help="Year (e.g., 2024)"
+    )
+
+    budget_status.set_defaults(func=budget_status_cmd)
     # Parse
     args = parser.parse_args()
 

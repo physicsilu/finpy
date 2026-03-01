@@ -9,7 +9,10 @@ from finpy.db import (
     get_transaction_by_id,
     delete_transaction_by_id,
     update_transaction_by_id,
-    get_recent_transactions
+    get_recent_transactions,
+    add_budget,
+    get_budget,
+    get_expense_aggregation_by_category
 )
 
 from rich.table import Table
@@ -327,7 +330,7 @@ def add_cmd(args):
     success = add_transaction(
         tx_type=args.type,
         amount=args.amount,
-        category=args.category,
+        category=args.category.strip().lower(),
         note=note_text
     )
 
@@ -369,3 +372,123 @@ def recent_cmd(args):
         )
     console.print(table)
 
+def budget_set_cmd(args):
+    """
+    Sets monthly budget (CLI layer)
+    """
+
+    amount = args.amount
+    category = args.category.strip().lower()
+    if amount <= 0:
+        console.print("Please provide a positive amount for budget.", style="bold red")
+        return
+    month = args.month
+    if month < 1 or month > 12:
+        console.print("Please provide a valid month (1-12).", style="bold red")
+        return
+    year = args.year
+
+    success = add_budget(category=category, amount=amount, month=month, year=year)
+
+    if success:
+        console.print(f"Budget set successfully for category '{category}' in month {month}, year {year}.", style="bold green")
+    else:
+        console.print("Failed to set budget.", style="bold red")
+
+def budget_status_cmd(args):
+    """
+    Shows budget status for a given month and year (CLI layer)
+    """
+
+    month = args.month
+    year = args.year
+
+    # ---- Input validation ----
+    if month < 1 or month > 12:
+        console.print("Please provide a valid month (1-12).", style="bold red")
+        return
+
+    try:
+        # ---- Fetch data from service layer ----
+        budgets = get_budget(month=month, year=year)
+
+        if not budgets:
+            console.print("No budgets found for this month.", style="yellow")
+            return
+
+        expenses = get_expense_aggregation_by_category(month=month, year=year)
+
+        # Normalize expense categories
+        expense_map = {
+            cat.strip().lower(): amt
+            for cat, amt in expenses
+        }
+
+        # ---- Create table ----
+        table = Table(title=f"Budget Status for {month}/{year}")
+
+        table.add_column("Category", style="cyan")
+        table.add_column("Budget Amount", justify="right", style="green")
+        table.add_column("Spent", justify="right", style="red")
+        table.add_column("Remaining", justify="right")
+        table.add_column("Usage %", style="bold", justify="right")
+        table.add_column("Status", style="bold", justify="center")
+
+        total_budget = 0
+        total_spent = 0
+
+        # ---- Populate rows ----
+        for cat, budget_amt in budgets:
+            normalized_cat = cat.strip().lower()
+
+            spent_amt = expense_map.get(normalized_cat, 0)
+            remaining_amt = budget_amt - spent_amt
+            usage_pct = (spent_amt / budget_amt) * 100 if budget_amt > 0 else 0
+
+            total_budget += budget_amt
+            total_spent += spent_amt
+
+            # ---- Status logic ----
+            if usage_pct < 50:
+                status = "[green]On Track[/green]"
+            elif usage_pct < 100:
+                status = "[yellow]Caution[/yellow]"
+            else:
+                status = "[red]Over Budget[/red]"
+
+            # ---- Remaining formatting ----
+            if remaining_amt < 0:
+                remaining_display = f"[red]₹{remaining_amt:.2f}[/red]"
+            else:
+                remaining_display = f"[yellow]₹{remaining_amt:.2f}[/yellow]"
+
+            table.add_row(
+                normalized_cat,
+                f"₹{budget_amt:.2f}",
+                f"₹{spent_amt:.2f}",
+                remaining_display,
+                f"{usage_pct:.2f}%",
+                status
+            )
+
+        # ---- Summary Row ----
+        total_remaining = total_budget - total_spent
+        total_usage_pct = (
+            (total_spent / total_budget) * 100 if total_budget > 0 else 0
+        )
+
+        table.add_section()
+
+        table.add_row(
+            "[bold]TOTAL[/bold]",
+            f"[bold]₹{total_budget:.2f}[/bold]",
+            f"[bold]₹{total_spent:.2f}[/bold]",
+            f"[bold]₹{total_remaining:.2f}[/bold]",
+            f"[bold]{total_usage_pct:.2f}%[/bold]",
+            ""
+        )
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"Error retrieving budget status: {e}", style="bold red")
